@@ -1,0 +1,534 @@
+---
+title: "Supervised-and-Unsupervised-Learning-for-Cancer-Classification-Using-Gene-Expression-Data"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-03-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Set CRAN Mirror
+options(repos = c(CRAN = "https://cloud.r-project.org/"))
+
+# Install required packages if not installed
+required_packages <- c("tinytex", "knitr", "rmarkdown")
+new_packages <- required_packages[!(required_packages %in% installed.packages()[, "Package"])]
+
+if (length(new_packages) > 0) install.packages(new_packages)
+
+# Load packages
+library(knitr)
+library(rmarkdown)
+library(tinytex)
+
+# Ensure TinyTeX is installed
+if (!tinytex::is_tinytex()) tinytex::install_tinytex()
+
+```
+
+```{r}
+# Project Task - R Code to Get Started
+# Version:January 2025
+rm(list=ls())
+# --- Setup ---
+# Set your working directory to the folder where your data is stored
+# Example: setwd("path/to/your/directory")
+
+setwd("D:/applied statistic group/Team project Deadline 14 March at noon and Presentations on 20 March (CLAa01) and 21 March (CLAa02)- (1)")
+
+# If you're using a University lab computer, ensure you save your work on your network drive 
+# or back it up using cloud storage (e.g., Apple iCloud, Google Drive) or a USB stick.
+# Always keep multiple backups of your work to prevent data loss.
+
+# --- Load Data ---
+# Copy the file "gene-expression-invasive-vs-noninvasive-cancer.csv" from Moodle to your working directory
+
+InitialData <- read.csv(file = "gene-expression-invasive-vs-noninvasive-cancer.csv")
+
+# --- Check the Data ---
+# Use the following commands to understand the structure and dimensions of the dataset
+str(InitialData)
+# Output Example:
+# 'data.frame': 78 obs. of 4773 variables
+# $ X             : int  1 2 3 4 5 6 7 8 9 10 ...
+# $ J00129        : num  -0.448 -0.48 -0.568 -0.819 ...
+# $ Contig29982_RC: num  -0.296 -0.512 -0.411 -0.267 ...
+# $ Contig42854   : num  -0.1 -0.031 -0.398 0.023 ...
+
+dim(InitialData)  # Returns dataset dimensions (rows and columns)
+# Example Output:
+# [1] 78 4773
+
+dimnames(InitialData)[[2]][4770:4773]  # View the names of the last columns
+# Example Output:
+# [1] "NM_000895" "NM_000898" "AF067420" "Class"
+
+# Summary of the dataset:
+# - 78 rows (patients)
+# - 4773 columns: 4772 columns represent gene expression measurements, 
+#   and column 4773 contains the "Class" variable (values: 1 or 2).
+
+# Check the distribution of the "Class" variable
+table(InitialData[, 'Class'])
+# Example Output:
+# Class
+#   1   2 
+#  34  44 
+
+
+
+# --- Randomization Setup ---
+
+# The script assigns a subset of variables to each team.
+# In the file 'teamsubsets.csv', each team number is associated with 500 columns (variables).
+
+# Load the file 'teamsubsets.csv', which contains the numbers of the teams 
+# and their associated variable subsets.
+teamsubsets <- read.table('teamsubsets.csv')
+
+# Specify the number of your team to identify your teams's subset of variables.
+# Replace 50 by the number of your team.
+
+your_team <- 4
+
+my_team_subset4 <- teamsubsets[your_team,]
+str(my_team_subset4)
+# Extract the subset of variables for the number of your team.
+# The result is a vector of 500 variables associated with the number of your team.
+
+print(my_team_subset4) # Print your team's subset of variables.
+
+# Assume that InitialData is the preloaded dataset containing the original variables.
+
+Class <- InitialData$Class # Extract the "Class" column, which represents the labels or targets.
+
+# Select only the columns (variables) specified in the subset (my_subset).
+X <- InitialData[, as.integer(my_team_subset4)]
+
+# Combine the "Class" column with the selected variables to create the final dataset.
+
+MyTeam_DataSet4 <- cbind(Class, X)
+
+# The dataset 'MyTeam_DataSet' contains:
+# - The "Class" column as the first column.
+# - The 500 variables associated with your registration number.
+
+str(MyTeam_DataSet4)
+
+#
+
+dim(MyTeam_DataSet4)
+
+# The data set has 78 rows (observations/patients) and 501 variables (class variable and 500 features/genes)
+
+dimnames(MyTeam_DataSet4)[[2]]
+
+# For example with team number 50 you get
+# > dimnames(MyTeam_DataSet50)[[2]]
+# [1] "Class"          "X98260"         "Contig26706_RC" "NM_002923"      "AL137736"    
+# [6] "NM_006086"      "AK000345"       "NM_014668"      "Contig50184_RC" "Contig25659_RC"
+# ...
+# [496] "NM_001797"      "NM_015623"      "AL117661"       "NM_006762"      "NM_001360"     
+# [501] "NM_002729"
+# 
+
+MyTeam_DataSet4[1:5,1:6]
+
+# For example with team number 50 you get
+# > MyTeam_DataSet50[1:5,1:6]
+#   Class X98260 Contig26706_RC NM_002923 AL137736 NM_006086
+# 1     2  0.114         -0.181    -0.079   -0.099    -0.709
+# 2     2  0.015         -0.131     0.143   -0.067    -0.646
+# 3     2 -0.439         -0.103     0.020    0.319    -0.052
+# 4     2  0.263          0.128    -0.267   -0.357     0.578
+# 5     2  0.215          0.139    -0.188   -0.329    -0.493
+
+# All analysis of your group has to use the data set MyTeam_DataSet
+# defined by the 500 variables identified by your team number
+# 
+# Avoid plagiarism by choosing for your team variable and object names,
+# and by using comments to explain each line of code in your team's words
+
+
+
+
+
+
+
+
+# Task 1: Consider supervised dimension reduction/supervised feature selection of the 500 observed gene expression variables (features) in your data set. Use as label the variable class with class==2 ‘invasive cancer’ and class==1 ‘non-invasive cancer’.
+
+# Normalize the gene expression data (scale it)
+scaled_data <- scale(MyTeam_DataSet4[, -1])  # Exclude the "Class" column
+scaled_data <- cbind(Class, scaled_data)  # Combine scaled data with Class
+
+# --- Principal Component Analysis (PCA) ---
+pca <- prcomp(scaled_data[, -1], center = TRUE, scale. = TRUE)  # Perform PCA
+
+# View the summary of PCA to understand the variance explained by the components
+summary(pca)
+
+# Plot the first two principal components
+plot(pca$x[, 1], pca$x[, 2], col = ifelse(Class == 1, "blue", "red"), 
+     xlab = "PC1", ylab = "PC2", main = "PCA: Invasive vs Non-invasive Cancer")
+legend("topright", legend = c("Non-invasive", "Invasive"), fill = c("blue", "red"))
+
+# --- Feature Selection Using Random Forest ---
+# Load the randomForest package
+install.packages("randomForest")
+library(randomForest)
+
+# Create a random forest model to rank feature importance
+rf_model <- randomForest(Class ~ ., data = MyTeam_DataSet4)
+
+# Display feature importance
+importance(rf_model)
+
+# Plot feature importance
+varImpPlot(rf_model)
+
+# --- Linear Discriminant Analysis (LDA) ---
+# Load the MASS package for LDA
+library(MASS)
+
+# Perform LDA on the dataset
+lda_model <- lda(Class ~ ., data = MyTeam_DataSet4)
+
+# Display LDA results
+print(lda_model)
+
+# Predict using the LDA model
+lda_predict <- predict(lda_model)
+
+# Check the number of discriminants (LDs)
+n_discriminants <- ncol(lda_predict$x)
+
+# If there is only 1 LD, plot only LD1
+if (n_discriminants == 1) {
+  plot(lda_predict$x[, 1], col = ifelse(Class == 1, "blue", "red"), 
+       xlab = "LD1", ylab = "Density", main = "LDA: Invasive vs Non-invasive Cancer")
+  legend("topright", legend = c("Non-invasive", "Invasive"), fill = c("blue", "red"))
+} else {
+  # If more than 1 LD, plot LD1 vs LD2
+  plot(lda_predict$x[, 1], lda_predict$x[, 2], col = ifelse(Class == 1, "blue", "red"), 
+       xlab = "LD1", ylab = "LD2", main = "LDA: Invasive vs Non-invasive Cancer")
+  legend("topright", legend = c("Non-invasive", "Invasive"), fill = c("blue", "red"))
+} 
+
+
+
+
+
+
+
+# Task 2 :Use supervised learning models/classification to predict the variable class with class==2 ‘invasive cancer’ and class==1 ‘non-invasive cancer’ of future patients. Apply LDA, QDA, Random Forest and SVM.
+# Load necessary libraries
+install.packages(c("MASS", "randomForest", "e1071", "caret", "klaR", "ggplot2"))
+library(MASS)       # LDA, QDA
+library(randomForest)  # Random Forest
+library(e1071)      # SVM
+library(caret)      # Confusion Matrix & Accuracy
+library(klaR)       # RDA
+library(ggplot2)    # Visualization
+
+# Load dataset
+data <- MyTeam_DataSet4
+
+# Convert Class to factor
+data$Class <- as.factor(data$Class)
+
+# Split data into training (80%) and testing (20%) sets
+set.seed(123)  # For reproducibility
+trainIndex <- createDataPartition(data$Class, p = 0.8, list = FALSE)
+trainData <- data[trainIndex, ]
+testData <- data[-trainIndex, ]
+
+# Remove near-zero variance features
+nzv <- nearZeroVar(trainData[, -1])
+if (length(nzv) > 0) {
+  trainData <- trainData[, -nzv, drop=FALSE]
+  testData <- testData[, -nzv, drop=FALSE]
+}
+
+# ---- OPTIONAL: Balance Class Distribution ----
+class_counts <- table(trainData$Class)
+min_class_size <- min(class_counts)
+
+if (min_class_size < 10) {  # If any class has <10 samples, upsample or downsample
+  trainData <- upSample(x = trainData[, -1], y = trainData$Class)
+  trainData$Class <- as.factor(trainData$Class)  # Ensure Class is a factor
+}
+
+# ---- Linear Discriminant Analysis (LDA) ----
+lda_model <- lda(Class ~ ., data = trainData)
+lda_pred <- predict(lda_model, newdata = testData)
+lda_cm <- confusionMatrix(lda_pred$class, testData$Class)
+print(lda_cm)
+
+# ---- Quadratic Discriminant Analysis (QDA) ----
+qda_model <- tryCatch({
+  qda(Class ~ ., data = trainData)
+}, error = function(e) {
+  print("QDA failed due to singular covariance matrix. Applying PCA for dimensionality reduction.")
+  return(NULL)
+})
+
+# If QDA fails, apply PCA to reduce dimensions and try again
+if (is.null(qda_model)) {
+  pca_train <- prcomp(trainData[, -1], center = TRUE, scale. = TRUE)
+  
+  # Limit to 10 PCs or enough to explain 95% variance
+  explained_var <- cumsum(pca_train$sdev^2 / sum(pca_train$sdev^2))
+  num_pcs <- min(10, which(explained_var >= 0.95)[1])  # Max 10 PCs
+  
+  # Transform train & test sets using the selected PCs
+  pca_train_data <- data.frame(pca_train$x[, 1:num_pcs], Class = trainData$Class)
+  pca_test_data <- data.frame(predict(pca_train, newdata = testData[, -1])[, 1:num_pcs], 
+                              Class = testData$Class)
+  
+  # Retry QDA on PCA-transformed data
+  qda_model <- tryCatch({
+    qda(Class ~ ., data = pca_train_data)
+  }, error = function(e) {
+    print("QDA still cannot be performed due to small class sizes.")
+    return(NULL)
+  })
+  
+  if (!is.null(qda_model)) {
+    qda_pred <- predict(qda_model, newdata = pca_test_data)
+  }
+} else {
+  qda_pred <- predict(qda_model, newdata = testData)
+}
+
+if (!is.null(qda_pred)) {
+  qda_cm <- confusionMatrix(qda_pred$class, testData$Class)
+  print(qda_cm)
+}
+
+# ---- Regularized Discriminant Analysis (RDA) ----
+rda_model <- rda(Class ~ ., data = trainData)
+rda_pred <- predict(rda_model, newdata = testData)$class
+rda_cm <- confusionMatrix(rda_pred, testData$Class)
+print(rda_cm)
+
+# ---- Random Forest ----
+rf_model <- randomForest(Class ~ ., data = trainData, ntree = 500)
+rf_pred <- predict(rf_model, newdata = testData)
+rf_cm <- confusionMatrix(rf_pred, testData$Class)
+print(rf_cm)
+
+# ---- Support Vector Machine (SVM) ----
+svm_model <- svm(Class ~ ., data = trainData, kernel = "radial")
+svm_pred <- predict(svm_model, newdata = testData)
+svm_cm <- confusionMatrix(svm_pred, testData$Class)
+print(svm_cm)
+
+# Compare Model Accuracies
+model_accuracies <- data.frame(
+  Model = c("LDA", "QDA", "RDA", "Random Forest", "SVM"),
+  Accuracy = c(lda_cm$overall["Accuracy"], 
+               ifelse(!is.null(qda_cm), qda_cm$overall["Accuracy"], NA),
+               rda_cm$overall["Accuracy"],
+               rf_cm$overall["Accuracy"],
+               svm_cm$overall["Accuracy"])
+)
+print(model_accuracies)
+
+# ---- Plot Model Accuracies ----
+ggplot(model_accuracies, aes(x = Model, y = Accuracy, fill = Model)) +
+  geom_bar(stat = "identity", color = "black") +
+  theme_minimal() +
+  labs(title = "Comparison of Model Accuracies", y = "Accuracy", x = "Model") +
+  theme(legend.position = "none")
+
+# ---- PCA Plot ----
+pca <- prcomp(trainData[, -1], center = TRUE, scale. = TRUE)
+pca_df <- data.frame(PC1 = pca$x[,1], PC2 = pca$x[,2], Class = trainData$Class)
+ggplot(pca_df, aes(x = PC1, y = PC2, color = Class)) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  labs(title = "PCA: Invasive vs Non-invasive Cancer", x = "PC1", y = "PC2")
+
+# ---- LDA Plot ----
+if (ncol(lda_pred$x) == 1) {
+  lda_df <- data.frame(LD1 = lda_pred$x[,1], Class = testData$Class)
+  ggplot(lda_df, aes(x = LD1, fill = Class)) +
+    geom_density(alpha = 0.5) +
+    theme_minimal() +
+    labs(title = "LDA: Invasive vs Non-invasive Cancer (1D)", x = "LD1", y = "Density")
+} else {
+  lda_df <- data.frame(LD1 = lda_pred$x[,1], LD2 = lda_pred$x[,2], Class = testData$Class)
+  ggplot(lda_df, aes(x = LD1, y = LD2, color = Class)) +
+    geom_point(size = 3) +
+    theme_minimal() +
+    labs(title = "LDA: Invasive vs Non-invasive Cancer", x = "LD1", y = "LD2")
+}
+
+
+
+
+
+
+
+
+
+
+# Task 3 :  Use unsupervised learning models/clustering to investigate clusters/groups of genes and clusters/groups of patients. Apply k-means clustering and hierarchical clustering. You may add one further method.
+# Install and load necessary packages
+install.packages(c("fpc", "cluster", "mclust", "factoextra", "ggplot2"))
+library(fpc)        # Cluster stability analysis
+library(cluster)    # Clustering algorithms
+library(mclust)     # Gaussian Mixture Models
+library(factoextra) # Visualization
+library(ggplot2)    # Plotting
+
+# Load dataset (excluding 'Class' column)
+data <- MyTeam_DataSet4[, -1]  # Remove the 'Class' column
+
+# Normalize the data
+scaled_data <- scale(data)
+
+# --- Determine Optimal Number of Clusters (Elbow Method & Silhouette) ---
+fviz_nbclust(scaled_data, kmeans, method = "wss") +
+  ggtitle("Elbow Method for Optimal Clusters")
+
+fviz_nbclust(scaled_data, kmeans, method = "silhouette") +
+  ggtitle("Silhouette Method for Optimal Clusters")
+
+# --- K-Means Clustering ---
+set.seed(123)
+k <- 3  # Choose based on elbow method result
+kmeans_result <- kmeans(scaled_data, centers = k, nstart = 25)
+
+# Visualize k-means clustering
+fviz_cluster(kmeans_result, data = scaled_data, geom = "point", ellipse = TRUE) +
+  ggtitle("K-Means Clustering")
+
+# --- Hierarchical Clustering ---
+dist_matrix <- dist(scaled_data, method = "euclidean")
+hc <- hclust(dist_matrix, method = "ward.D2")
+
+# Plot Dendrogram
+plot(hc, labels = FALSE, main = "Hierarchical Clustering Dendrogram")
+rect.hclust(hc, k = k, border = "red")
+
+# --- Gaussian Mixture Model (GMM) ---
+gmm_result <- Mclust(scaled_data)
+summary(gmm_result)
+
+# Visualize GMM clusters
+fviz_cluster(list(data = scaled_data, cluster = gmm_result$classification)) +
+  ggtitle("Gaussian Mixture Model Clustering")
+
+# --- Cluster Stability Analysis ---
+set.seed(123)
+clust_stability <- clusterboot(scaled_data, clustermethod = kmeansCBI, krange = k, seed = 123)
+
+# Print cluster stability scores
+print(clust_stability$bootmean)
+print(clust_stability$bootbrd)
+
+
+
+
+
+
+
+# Task 4:Investigate if clusters established under III) improve your ‘best’ machine learning model. Use resampling techniques as repeated 10-fold cross validation, jack-knife or bootstrap to compare the machine learning models applied. 
+
+# Load necessary libraries
+library(caret)
+library(randomForest)
+library(e1071)  # For SVM
+library(xgboost)
+
+# Step 1: Ensure 'Class' is a factor for classification
+MyTeam_DataSet4$Class <- as.factor(MyTeam_DataSet4$Class)
+
+# Step 2: Check for class imbalance
+print(table(MyTeam_DataSet4$Class))
+
+# Step 3: Handle class imbalance using upsampling
+train_control_up <- trainControl(method = "none", sampling = "up")  
+
+# Step 4: Remove highly correlated features
+cor_matrix <- cor(MyTeam_DataSet4[, -which(names(MyTeam_DataSet4) == "Class")])
+high_corr <- findCorrelation(cor_matrix, cutoff = 0.9)
+print("Highly correlated features removed:")
+print(high_corr)
+MyTeam_DataSet4_reduced <- MyTeam_DataSet4[, -high_corr]
+
+# Step 5: Perform clustering (K-means) and add cluster labels
+set.seed(123)
+kmeans_result <- kmeans(MyTeam_DataSet4_reduced[, -which(names(MyTeam_DataSet4_reduced) == "Class")], centers = 3)
+MyTeam_DataSet4_reduced$ClusterLabel <- as.factor(kmeans_result$cluster)
+
+# Step 6: Define different resampling strategies
+train_control_cv <- trainControl(method = "repeatedcv", number = 10, repeats = 3, sampling = "up")  # Repeated 10-fold CV
+train_control_bootstrap <- trainControl(method = "boot", number = 50, sampling = "up")  # Bootstrap
+train_control_jackknife <- trainControl(method = "LOOCV", sampling = "up")  # Jackknife (Leave-One-Out Cross Validation)
+
+# Step 7: Train and evaluate multiple models
+
+# Function to train & evaluate models
+train_and_evaluate <- function(model_method, train_control) {
+  model <- train(Class ~ ., data = MyTeam_DataSet4_reduced, method = model_method, trControl = train_control)
+  predictions <- predict(model, newdata = MyTeam_DataSet4_reduced)
+  confusion <- confusionMatrix(predictions, MyTeam_DataSet4_reduced$Class)
+  return(list(model = model, confusion = confusion))
+}
+
+# Train LDA, Random Forest, SVM, and XGBoost using different resampling methods
+models <- list()
+resampling_methods <- list("RepeatedCV" = train_control_cv, "Bootstrap" = train_control_bootstrap, "Jackknife" = train_control_jackknife)
+model_types <- c("lda", "rf", "svmRadial", "xgbTree")
+
+for (resampling_name in names(resampling_methods)) {
+  resampling <- resampling_methods[[resampling_name]]
+  for (model_type in model_types) {
+    key <- paste(model_type, resampling_name, sep = "_")
+    cat("\nTraining", model_type, "with", resampling_name, "...\n")
+    models[[key]] <- train_and_evaluate(model_type, resampling)
+  }
+}
+
+# Step 8: Compare Model Performance
+results <- data.frame(Model = character(), Resampling = character(), Accuracy = numeric(), Precision = numeric(), Recall = numeric(), F1 = numeric())
+
+for (key in names(models)) {
+  model_name <- unlist(strsplit(key, "_"))[1]
+  resampling_name <- unlist(strsplit(key, "_"))[2]
+  conf_matrix <- models[[key]]$confusion
+  accuracy <- conf_matrix$overall["Accuracy"]
+  precision <- conf_matrix$byClass["Precision"]
+  recall <- conf_matrix$byClass["Recall"]
+  f1_score <- conf_matrix$byClass["F1"]
+
+  results <- rbind(results, data.frame(Model = model_name, Resampling = resampling_name, Accuracy = accuracy, Precision = precision, Recall = recall, F1 = f1_score))
+}
+
+# Step 9: Identify the Best Model
+best_model <- results[which.max(results$Accuracy), ]
+cat("\nBest Model:\n")
+print(best_model)
+
+cat("\nThe best model based on accuracy is", best_model$Model, "using", best_model$Resampling, "resampling.\n")
+
+# Step 10: Justification
+if (best_model$Model == "lda") {
+  cat("\nLDA performed best, meaning that the dataset likely has well-separated linear decision boundaries.")
+} else if (best_model$Model == "rf") {
+  cat("\nRandom Forest performed best, indicating that the dataset benefits from non-linear decision boundaries and feature importance handling.")
+} else if (best_model$Model == "svmRadial") {
+  cat("\nSVM performed best, showing that the dataset has complex decision boundaries benefiting from a radial basis kernel.")
+} else if (best_model$Model == "xgbTree") {
+  cat("\nXGBoost performed best, suggesting that boosting methods are effective for this dataset, likely handling feature interactions well.")
+}
+
+
+
+```
+
+
